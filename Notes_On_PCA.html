@@ -1,0 +1,342 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>PCA Empirical Descriptions</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2017-05-11"><meta name="DC.source" content="Notes_On_PCA.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>PCA Empirical Descriptions</h1><!--introduction--><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#2">The SVD and Eigenvalues, or Why we need to center our matrices before PCA</a></li></ul></div><p>There were a lot of things that I think should be a bit more clear, including stuff that I didn't know before, so I decided to do a write up about how stuff relates with the SVD and PCA.</p><h2>The SVD and Eigenvalues, or Why we need to center our matrices before PCA<a name="2"></a></h2><p>Lets first read in the Z matrix from Hunter and Takane(2002).</p><pre class="codeinput">load(<span class="string">'Z_takane106-7.mat'</span>);
+</pre><p>You can see that the Z matrix is in it's raw form. It has not been standardized or centered at all</p><pre class="codeinput">head(Z); <span class="comment">% print out the first 5 rows and columns of a matrix</span>
+</pre><pre class="codeoutput">
+ans =
+
+     4     3     3     0
+     5     5     6     2
+     6     5     6     5
+     5     5     1     0
+
+</pre><p>We will test the assertion that the sum of the eigenvalues of a matrix is equal to the total variance in a matrix. This will be kind of obvious once we connect the formulas. First, we will get the total variance of the matrix manually.</p><pre class="codeinput">meanZ = mean(mean(Z));           <span class="comment">% Grand mean of Z</span>
+[m, n] = size(Z);
+Sq_Z = (Z-meanZ).^2;             <span class="comment">% Calculate the Squares of Z</span>
+SSq_Z = sum(sum(Sq_Z));          <span class="comment">% Sum the Sum of Squares for all columns</span>
+SSq_Z/(m-1)
+</pre><pre class="codeoutput">
+ans =
+
+          77.3553040666584
+
+</pre><p>This is equivalent to the formula</p><p><img src="Notes_On_PCA_eq47041.png" alt="$$\sum_{n=1}^{nrow} \sum_{m=1}^{ncol} (Z_{nm}-\overline{Z})^2$$"></p><p>We can then do the SVD</p><pre class="codeinput">[U,D,V] = svd(Z, <span class="string">'econ'</span>);
+eigen = trace(D.^2)/(m-1) <span class="comment">%trace is the sum of the diagonal of a matrix</span>
+</pre><pre class="codeoutput">
+eigen =
+
+           214.46511627907
+
+</pre><p>You'll notice that the eigenvalues and the variance aren't equal in this case. This is because the SVD takes in an uncentered matrix.</p><p>To understand why, lets take a look why the SVD can become equal to the PCA. The SVD is equal to the eigendecomposition of the covariance matrix by the following proof:</p><div><ol><li>Let <img src="Notes_On_PCA_eq04059.png" alt="$UDV = svd(X)$"></li><li><img src="Notes_On_PCA_eq79759.png" alt="$Cov = X'*X/(N-1)$"></li><li>By eigendecomposition <img src="Notes_On_PCA_eq77694.png" alt="$Cov = QLQ'$">, where Q is the series of eigenvectors and L the eigenvalues of the covariance matrix</li><li><img src="Notes_On_PCA_eq65762.png" alt="$X = UDV'$"> Where U and V are the eigenvectors and D are the eigenvalues of the X matrix</li><li>By substitution   <img src="Notes_On_PCA_eq75467.png" alt="$(UDV')'*(UDV')/(N-1)$"></li><li>By properties of transpose   <img src="Notes_On_PCA_eq24285.png" alt="$(VD'U'*UDV')/(N-1)$"></li><li>By the fact that U is a singular matrix and therefore U'*U = I(the identity matrix):   <img src="Notes_On_PCA_eq32487.png" alt="$VD^2V'/(N-1)$"></li><li>By equivalence <img src="Notes_On_PCA_eq62100.png" alt="$QLQ' = VD^2V'/(N-1)$"></li><li>Therefore, Q = V and <img src="Notes_On_PCA_eq77925.png" alt="$L = D^2/(N-1)$"></li></ol></div><p>The formula basically proves the relation between the eigenvalues of the covariance matrix of X and eigenvalues of X. But if you go to line 2, you can see the formula <img src="Notes_On_PCA_eq79759.png" alt="$Cov = X'*X/(N-1)$">. The formula for the covariance is:</p><p><img src="Notes_On_PCA_eq22742.png" alt="$$(\sum_{n=1}^{nrow} (X_{n}-\overline{X})(Y_{n}-\overline{Y})$$"></p><p>And variance is: <img src="Notes_On_PCA_eq14983.png" alt="$(\sum_{n=1}^{nrow} (X_{n}-\overline{X})^2)/(N-1)$"></p><p>You'll notice that the formula <img src="Notes_On_PCA_eq79759.png" alt="$Cov = X'*X/(N-1)$"> has no subtraction in it (except for the -1). Therefore, it is equivalent to <img src="Notes_On_PCA_eq63049.png" alt="$(XY)/(N-1)$"> and <img src="Notes_On_PCA_eq40704.png" alt="$(X^2)/(N-1)$"> for the covariance and variance respectively. Therefore, the covariance formula <img src="Notes_On_PCA_eq75384.png" alt="$X'*X/(N-1)$"> only works if the means of the matrix are 0. And following, that L(the eigenvalues of the covariance matrix) is equal to D.^2/(N-1) only if the matrix is centered. It remains to be proven that the trace of a square matrix is equal to the sum of eigenvalues, which is a bit more complicated, but you can see it here:</p><pre class="codeinput">A = rand(10);
+trace(A)-sum(real(eig(A)))&lt;0.01
+</pre><pre class="codeoutput">
+ans =
+
+     1
+
+</pre><p>Lets wrap the sum of squares procedure into a formula so we can compare different preprocessing steps. I saved this as assert_SS_equals_SVD.m</p><pre class="language-matlab"><span class="keyword">function</span> assert_SS_equals_SVD(Z, condition)
+  meanZ = mean(mean(Z));           <span class="comment">% mean of Z</span>
+  [m, n] = size(Z);
+  Sq_Z = (Z-meanZ).^2;             <span class="comment">% Calculate the Squares of Z</span>
+  SSq_Z=zeros(1,n);               <span class="comment">% make new variable for the sum of columns</span>
+  <span class="keyword">for</span> i = 1:n                     <span class="comment">% loop to compute sum of squares for each column</span>
+      SSq_Z(1,i) = sum(Sq_Z(:,i));
+  <span class="keyword">end</span>
+  SSq_Z = sum(SSq_Z)/(m-1);          <span class="comment">% Sum the Sum of Squares for all columns</span>
+                               <span class="comment">% To get Variance divide by m or m-1</span>
+  [U,D,V]=svd(Z, <span class="string">'econ'</span>);
+  <span class="keyword">try</span>
+      assert(abs(SSq_Z-(trace(D.^2))/(m-1))&lt;0.001);
+      disp([<span class="string">'Variance and eigenvalues are both equal on condition: '</span> condition <span class="string">' and are ~'</span> num2str(SSq_Z)]);
+  <span class="keyword">catch</span>
+      warning([<span class="string">'SVD fails on condition: '</span> condition]);
+  <span class="keyword">end</span>
+ <span class="keyword">end</span>
+</pre><pre class="codeinput">assert_SS_equals_SVD(Z, <span class="string">'Raw Scores'</span>);
+assert_SS_equals_SVD(bsxfun(@minus, Z, mean(Z)), <span class="string">'Columns Centered'</span>);
+assert_SS_equals_SVD(zscore(Z), <span class="string">'Columns Standardized'</span>);
+assert_SS_equals_SVD(zscore(zscore(Z')'), <span class="string">'Columns and Rows Standardized'</span>);
+</pre><pre class="codeoutput">Warning: SVD fails on condition: Raw Scores 
+Variance and eigenvalues are both equal on condition: Columns Centered and are ~71.7188
+Variance and eigenvalues are both equal on condition: Columns Standardized and are ~17
+Variance and eigenvalues are both equal on condition: Columns and Rows Standardized and are ~17
+</pre><p>As expected, only the raw scores fail. So we will normalize the Z matrix, and read in the G matrix and test the GC.</p><pre class="codeinput">Z = zscore(zscore(Z')');
+load(<span class="string">'G.mat'</span>);
+head(G);
+</pre><pre class="codeoutput">
+ans =
+
+     1     0     0     0
+     1     0     0     0
+     1     0     0     0
+     1     0     0     0
+
+</pre><p>We regress the Z on G with the formula: <img src="Notes_On_PCA_eq49467.png" alt="$(G'*G)^{-1}*G'*Z$"></p><p>Note that this is simply the Normal Equation: <a href="https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#The_general_problem">https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#The_general_problem</a> with G substituted for X and Z substituted for y</p><pre class="codeinput">GC = G*pinv(G'*G)*G'*Z;
+head(GC)
+</pre><pre class="codeoutput">
+ans =
+
+  Columns 1 through 3
+
+          1.12161186444557         0.847579673341988         0.417725074791072
+          1.12161186444557         0.847579673341988         0.417725074791072
+          1.12161186444557         0.847579673341988         0.417725074791072
+          1.12161186444557         0.847579673341988         0.417725074791072
+
+  Column 4
+
+          -0.9779316130563
+          -0.9779316130563
+          -0.9779316130563
+          -0.9779316130563
+
+</pre><p>Look at the mean of the GC matrix</p><pre class="codeinput">GC_mean = mean(GC);
+GC_mean(1:5)'
+</pre><pre class="codeoutput">
+ans =
+
+                         0
+      -1.4130111222502e-16
+     -3.28020439093796e-17
+      1.24269281733611e-16
+      2.37184009806283e-16
+
+</pre><p>And the standard deviation</p><pre class="codeinput">st_dev = std(GC);
+st_dev(1:5)'
+</pre><pre class="codeoutput">
+ans =
+
+         0.746353376417048
+         0.604564851475264
+         0.915970861198117
+         0.614536867772993
+         0.902238233705598
+
+</pre><p>So in this case, the mean is still ~0 but the standard deviation is not. Therefore, the GC is centered but not standardized. This means that we should expect the variance and the eigenvalues to match. j</p><pre class="codeinput">assert_SS_equals_SVD(GC, <span class="string">'GC matrix'</span>);
+</pre><pre class="codeoutput">Variance and eigenvalues are both equal on condition: GC matrix and are ~10.6286
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% PCA Empirical Descriptions
+%%
+%
+% There were a lot of things that I think should be a bit more clear,
+% including stuff that I didn't know before, so I decided to do a write up about how
+% stuff relates with the SVD and PCA. 
+
+%% The SVD and Eigenvalues, or Why we need to center our matrices before PCA
+
+%%
+% Lets first read in the Z matrix from Hunter and Takane(2002). 
+
+load('Z_takane106-7.mat');
+
+%%
+% You can see that the Z matrix is in it's raw form. It has not been
+% standardized or centered at all
+
+head(Z); % print out the first 5 rows and columns of a matrix
+
+%%
+% We will test the assertion that the sum of the eigenvalues of a matrix is
+% equal to the total variance in a matrix. This will be kind of obvious
+% once we connect the formulas. First, we will get the total variance of
+% the matrix manually. 
+
+meanZ = mean(mean(Z));           % Grand mean of Z
+[m, n] = size(Z);
+Sq_Z = (Z-meanZ).^2;             % Calculate the Squares of Z
+SSq_Z = sum(sum(Sq_Z));          % Sum the Sum of Squares for all columns
+SSq_Z/(m-1)
+
+%%
+% This is equivalent to the formula
+%%
+% 
+% $$\sum_{n=1}^{nrow} \sum_{m=1}^{ncol} (Z_{nm}-\overline{Z})^2$$
+% 
+% We can then do the SVD 
+
+[U,D,V] = svd(Z, 'econ');
+eigen = trace(D.^2)/(m-1) %trace is the sum of the diagonal of a matrix
+
+%% 
+% You'll notice that the eigenvalues and the variance aren't equal in this
+% case. This is because the SVD takes in an uncentered matrix. 
+
+%% 
+% To understand why, lets take a look why the SVD can become equal to the PCA. The SVD is
+% equal to the eigendecomposition of the covariance matrix by the following
+% proof: 
+%%
+% # Let $UDV = svd(X)$
+% # $Cov = X'*X/(N-1)$
+% # By eigendecomposition $Cov = QLQ'$, where Q is the series of eigenvectors
+% and L the eigenvalues of the covariance matrix
+% # $X = UDV'$ Where U and V are the eigenvectors and D are the eigenvalues
+% of the X matrix
+% # By substitution   $(UDV')'*(UDV')/(N-1)$
+% # By properties of transpose   $(VD'U'*UDV')/(N-1)$
+% # By the fact that U is a singular matrix and therefore U'*U = I(the
+% identity matrix):   $VD^2V'/(N-1)$ 
+% # By equivalence $QLQ' = VD^2V'/(N-1)$ 
+% # Therefore, Q = V and $L = D^2/(N-1)$
+
+
+%%
+% The formula basically proves the relation between the eigenvalues of the
+% covariance matrix of X and eigenvalues of X. But if you go to line 2, you
+% can see the formula $Cov = X'*X/(N-1)$. The formula for the covariance is:
+
+%%
+% $$(\sum_{n=1}^{nrow} (X_{n}-\overline{X})(Y_{n}-\overline{Y})$$
+% 
+
+%%
+% And variance is: 
+% $(\sum_{n=1}^{nrow} (X_{n}-\overline{X})^2)/(N-1)$
+
+%%
+% You'll notice that the formula $Cov = X'*X/(N-1)$ has no subtraction in
+% it (except for the -1). Therefore, it is equivalent to
+% $(XY)/(N-1)$ and $(X^2)/(N-1)$ for
+% the covariance and variance respectively. Therefore, the covariance
+% formula $X'*X/(N-1)$ only works if the means of the matrix are 0. And
+% following, that L(the eigenvalues of the covariance matrix) is equal to
+% D.^2/(N-1) only if the matrix is centered. It remains to be proven that
+% the trace of a square matrix is equal to the sum of eigenvalues, which is
+% a bit more complicated, but you can see it here:
+A = rand(10);
+trace(A)-sum(real(eig(A)))<0.01 
+
+
+%%
+% Lets wrap the sum of squares procedure into a formula so we can compare
+% different preprocessing steps. I saved this as assert_SS_equals_SVD.m
+%%
+% 
+%   function assert_SS_equals_SVD(Z, condition)
+%     meanZ = mean(mean(Z));           % mean of Z
+%     [m, n] = size(Z);
+%     Sq_Z = (Z-meanZ).^2;             % Calculate the Squares of Z
+%     SSq_Z=zeros(1,n);               % make new variable for the sum of columns
+%     for i = 1:n                     % loop to compute sum of squares for each column
+%         SSq_Z(1,i) = sum(Sq_Z(:,i));
+%     end
+%     SSq_Z = sum(SSq_Z)/(m-1);          % Sum the Sum of Squares for all columns
+%                                  % To get Variance divide by m or m-1
+%     [U,D,V]=svd(Z, 'econ');
+%     try 
+%         assert(abs(SSq_Z-(trace(D.^2))/(m-1))<0.001);
+%         disp(['Variance and eigenvalues are both equal on condition: ' condition ' and are ~' num2str(SSq_Z)]);
+%     catch
+%         warning(['SVD fails on condition: ' condition]);
+%     end
+%    end
+% 
+
+assert_SS_equals_SVD(Z, 'Raw Scores');
+assert_SS_equals_SVD(bsxfun(@minus, Z, mean(Z)), 'Columns Centered');
+assert_SS_equals_SVD(zscore(Z), 'Columns Standardized');
+assert_SS_equals_SVD(zscore(zscore(Z')'), 'Columns and Rows Standardized');
+
+%%
+% As expected, only the raw scores fail. So we will normalize the Z matrix,
+% and read in the G matrix and test the GC. 
+Z = zscore(zscore(Z')'); 
+load('G.mat');
+head(G);
+%% 
+% We regress the Z on G with the formula: $(G'*G)^{-1}*G'*Z$
+%
+% Note that this is simply the Normal Equation:
+% <https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#The_general_problem>
+% with G substituted for X and Z substituted for y
+GC = G*pinv(G'*G)*G'*Z;
+head(GC)
+
+%%
+% Look at the mean of the GC matrix
+GC_mean = mean(GC);
+GC_mean(1:5)'
+
+
+%%
+% And the standard deviation
+st_dev = std(GC);
+st_dev(1:5)'
+
+%%
+% So in this case, the mean is still ~0 but the standard deviation is not. 
+% Therefore, the GC is centered but not standardized. This means that we
+% should expect the variance and the eigenvalues to match. j
+
+assert_SS_equals_SVD(GC, 'GC matrix');
+
+##### SOURCE END #####
+--></body></html>
